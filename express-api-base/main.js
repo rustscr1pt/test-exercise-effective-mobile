@@ -7,10 +7,10 @@ app.use(bodyParser.json());
 
 // Настройка подключения к PostgreSQL
 const pool = new Pool({
-    user: 'your_user',
-    host: 'localhost',
-    database: 'your_database',
-    password: 'your_password',
+    user: 'myuser',
+    host: 'db',
+    database: 'mydatabase',
+    password: 'mypassword',
     port: 5432,
 });
 
@@ -126,7 +126,7 @@ app.get('/products', async (req, res) => {
 });
 
 // Запуск сервера
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+const port = process.env.DEPLOY_PORT || 8003;
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
