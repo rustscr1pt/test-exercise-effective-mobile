@@ -6,6 +6,8 @@ services:
     command: npm run start
     container_name: express-api-base
     restart: unless-stopped
+    environment:
+      - DEPLOY_PORT=8001
     stdin_open: true
     networks:
       - combined-network
@@ -15,8 +17,7 @@ services:
     container_name: nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "8000:8000"
     depends_on:
       - express-api-base
     networks:
