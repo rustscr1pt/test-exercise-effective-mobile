@@ -1,5 +1,6 @@
 version: "3.4"
 services:
+
   nginx:
     build: ./nginx
     container_name: nginx
@@ -32,6 +33,18 @@ services:
     restart: unless-stopped
     environment:
       - DEPLOY_PORT=8001
+      - API_HISTORY_PORT=8002
+    stdin_open: true
+    networks:
+      - combined-network
+
+  express-api-history:
+    build: ./express-api-history
+    command: npm run start
+    container_name: express-api-history
+    restart: unless-stopped
+    environment:
+      - DEPLOY_PORT=8002
     stdin_open: true
     networks:
       - combined-network

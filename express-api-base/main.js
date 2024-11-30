@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const extractPool = require('./postgres_pool');
+const axios = require('axios');
 
 const app = express();
 app.use(bodyParser.json());
@@ -8,11 +9,27 @@ app.use(bodyParser.json());
 // Настройка подключения к PostgreSQL
 const pool = extractPool();
 
+const HISTORY_SERVICE_URL = `http://express-api-history:${process.env.API_HISTORY_PORT || 8002}/history`;
+
+// Функция для отправки событий в сервис истории
+async function logAction(action, details) {
+    try {
+        await axios.post(HISTORY_SERVICE_URL, {
+            action,
+            ...details,
+        });
+        console.log('Action logged:', action);
+    } catch (err) {
+        console.error('Failed to log action:', err.message);
+    }
+}
+
 // Endpoint: Создание товара
 app.post('/products', async (req, res) => {
     const { name } = req.body;
     try {
         const result = await pool.query('INSERT INTO products (name) VALUES ($1) RETURNING *', [name]);
+        await logAction('create_product', { product: result.rows[0] });
         res.status(201).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -27,6 +44,7 @@ app.post('/inventory', async (req, res) => {
             'INSERT INTO inventory (plu, store_id, stock_quantity, order_quantity) VALUES ($1, $2, $3, $4) RETURNING *',
             [plu, store_id, stock_quantity, order_quantity]
         );
+        await logAction('create_inventory', { inventory: result.rows[0] });
         res.status(201).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -41,6 +59,7 @@ app.patch('/inventory/increase', async (req, res) => {
             'UPDATE inventory SET stock_quantity = stock_quantity + $1 WHERE inventory_id = $2 RETURNING *',
             [amount, inventory_id]
         );
+        await logAction('increase_stock', { inventory_id, amount });
         res.status(200).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -55,6 +74,7 @@ app.patch('/inventory/decrease', async (req, res) => {
             'UPDATE inventory SET stock_quantity = stock_quantity - $1 WHERE inventory_id = $2 RETURNING *',
             [amount, inventory_id]
         );
+        await logAction('decrease_stock', { inventory_id, amount });
         res.status(200).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -120,7 +140,7 @@ app.get('/products', async (req, res) => {
 });
 
 // Запуск сервера
-const port = process.env.DEPLOY_PORT || 8003;
+const port = process.env.DEPLOY_PORT || 8001;
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

@@ -59,7 +59,7 @@ app.get("/history", async (req, res) => {
     }
 });
 
-const port = process.env.DEPLOY_PORT || 8004;
+const port = process.env.DEPLOY_PORT || 8002;
 
 // Запуск сервера
 app.listen(port, () => {
