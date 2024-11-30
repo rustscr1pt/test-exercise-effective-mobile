@@ -1,0 +1,27 @@
+version: "3.4"
+services:
+
+  express-api-base:
+    build: ./express-api-base
+    command: npm run start
+    container_name: express-api-base
+    restart: unless-stopped
+    stdin_open: true
+    networks:
+      - combined-network
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - express-api-base
+    networks:
+      - combined-network
+
+networks:
+  combined-network:
+    driver: bridge
