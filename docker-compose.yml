@@ -1,5 +1,28 @@
 version: "3.4"
 services:
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - express-api-base
+      - db
+    networks:
+      - combined-network
+
+  db:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - combined-network
 
   express-api-base:
     build: ./express-api-base
@@ -9,17 +32,6 @@ services:
     environment:
       - DEPLOY_PORT=8001
     stdin_open: true
-    networks:
-      - combined-network
-
-  nginx:
-    build: ./nginx
-    container_name: nginx
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    depends_on:
-      - express-api-base
     networks:
       - combined-network
 
