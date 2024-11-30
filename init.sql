@@ -21,3 +21,13 @@ CREATE TABLE inventory (
     order_quantity INT NOT NULL DEFAULT 0,
     UNIQUE (plu, store_id)
 );
+
+-- Таблица для хранения истории
+CREATE TABLE action_history (
+    id SERIAL PRIMARY KEY,
+    shop_id INT REFERENCES stores(store_id) ON DELETE SET NULL, -- ID магазина
+    plu INT REFERENCES products(plu) ON DELETE SET NULL,       -- Артикул товара
+    action VARCHAR(50) NOT NULL,                               -- Тип действия
+    action_details JSONB,                                      -- Дополнительные данные действия
+    created_at TIMESTAMP DEFAULT NOW()                         -- Время действия
+);
