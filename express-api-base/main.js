@@ -1,18 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { Pool } = require('pg');
+const extractPool = require('./postgres_pool');
 
 const app = express();
 app.use(bodyParser.json());
 
 // Настройка подключения к PostgreSQL
-const pool = new Pool({
-    user: 'myuser',
-    host: 'db',
-    database: 'mydatabase',
-    password: 'mypassword',
-    port: 5432,
-});
+const pool = extractPool();
 
 // Endpoint: Создание товара
 app.post('/products', async (req, res) => {
