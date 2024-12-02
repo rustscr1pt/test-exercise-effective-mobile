@@ -1,19 +1,29 @@
 const express = require("express");
-const { Pool } = require("pg");
+const extractPool = require('./postgres_pool');
 const app = express();
 
-const pool = new Pool({
-    user: "myuser",
-    host: "db",
-    database: "history_service",
-    password: "mypassword",
-    port: 5432,
-});
+// Setup PostgreSQL connection
+const pool = extractPool();
 
-// Middleware для обработки JSON
+// Middleware for JSON parsing
 app.use(express.json());
 
-// Endpoint для получения истории с фильтрацией
+// POST Endpoint to log actions
+app.post("/history", async (req, res) => {
+    const { action, shop_id, plu, details } = req.body;
+    try {
+        const result = await pool.query(
+            "INSERT INTO action_history (action, shop_id, plu, action_details, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *",
+            [action, shop_id || null, plu, JSON.stringify(details)] // Correct column name `action_details`
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error logging action" });
+    }
+});
+
+// GET Endpoint to retrieve history with filtering and pagination
 app.get("/history", async (req, res) => {
     const { shop_id, plu, start_date, end_date, action, page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
@@ -49,19 +59,18 @@ app.get("/history", async (req, res) => {
             `SELECT * FROM action_history
              ${whereClause}
              ORDER BY created_at DESC
-             LIMIT $6 OFFSET $7`,
+             LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
             [...values, limit, offset]
         );
         res.json(rows);
     } catch (err) {
         console.error(err);
-        res.status(500).send("Ошибка сервера");
+        res.status(500).send("Server error");
     }
 });
 
+// Set the port for the history service
 const port = process.env.DEPLOY_PORT || 8002;
-
-// Запуск сервера
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

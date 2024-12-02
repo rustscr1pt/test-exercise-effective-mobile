@@ -14,9 +14,17 @@ const HISTORY_SERVICE_URL = `http://express-api-history:${process.env.API_HISTOR
 // Функция для отправки событий в сервис истории
 async function logAction(action, details) {
     try {
+        console.log({
+            action,
+            shop_id: details.shop_id || null,
+            plu: details.plu || null,
+            details: details.details || 'No additional details'
+        });
         await axios.post(HISTORY_SERVICE_URL, {
             action,
-            ...details,
+            shop_id: details.shop_id || null,
+            plu: details.plu || null,
+            details: details.details || 'No additional details'
         });
         console.log('Action logged:', action);
     } catch (err) {
@@ -29,6 +37,7 @@ app.post('/products', async (req, res) => {
     const { name } = req.body;
     try {
         const result = await pool.query('INSERT INTO products (name) VALUES ($1) RETURNING *', [name]);
+        console.log(result.rows[0]);
         await logAction('create_product', { product: result.rows[0] });
         res.status(201).json(result.rows[0]);
     } catch (err) {
