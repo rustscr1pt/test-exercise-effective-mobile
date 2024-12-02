@@ -14,17 +14,11 @@ const HISTORY_SERVICE_URL = `http://express-api-history:${process.env.API_HISTOR
 // Функция для отправки событий в сервис истории
 async function logAction(action, details) {
     try {
-        console.log({
-            action,
-            shop_id: details.shop_id || null,
-            plu: details.plu || null,
-            details: details.details || 'No additional details'
-        });
         await axios.post(HISTORY_SERVICE_URL, {
             action,
-            shop_id: details.shop_id || null,
-            plu: details.plu || null,
-            details: details.details || 'No additional details'
+            shop_id: details.store?.store_id || details.inventory?.store_id || null,
+            plu: details.inventory?.plu || null,
+            details: details.store || details.inventory || 'No additional details'
         });
         console.log('Action logged:', action);
     } catch (err) {
@@ -47,18 +41,40 @@ app.post('/products', async (req, res) => {
 
 // Endpoint: Создание остатка
 app.post('/inventory', async (req, res) => {
-    const { plu, store_id, stock_quantity, order_quantity } = req.body;
+    const { plu, store_id, stock_quantity, order_quantity, store_name } = req.body; // Use `store_name` for new stores
     try {
+        // Check if the store exists
+        const storeCheck = await pool.query('SELECT store_id FROM stores WHERE store_id = $1', [store_id]);
+
+        // If the store does not exist, create it
+        if (storeCheck.rows.length === 0) {
+            if (!store_name) {
+                return res.status(400).json({ error: 'Store does not exist, and store_name is required to create a new store.' });
+            }
+            const newStore = await pool.query(
+                'INSERT INTO stores (store_id, store_name) VALUES ($1, $2) RETURNING *',
+                [store_id, store_name]
+            );
+            console.log(`Store with ID ${store_id} created.`);
+            await logAction('create_store', { store: newStore.rows[0] }); // Log the store creation
+        }
+
+        // Insert inventory record
         const result = await pool.query(
             'INSERT INTO inventory (plu, store_id, stock_quantity, order_quantity) VALUES ($1, $2, $3, $4) RETURNING *',
             [plu, store_id, stock_quantity, order_quantity]
         );
+
+        // Log the inventory action
         await logAction('create_inventory', { inventory: result.rows[0] });
+
+        // Return success response
         res.status(201).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // Endpoint: Увеличение остатка
 app.patch('/inventory/increase', async (req, res) => {
