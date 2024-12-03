@@ -84,7 +84,7 @@ app.patch('/inventory/increase', async (req, res) => {
             'UPDATE inventory SET stock_quantity = stock_quantity + $1 WHERE inventory_id = $2 RETURNING *',
             [amount, inventory_id]
         );
-        await logAction('increase_stock', { inventory_id, amount });
+        await logAction('increase_stock', { inventory: result.rows[0] });
         res.status(200).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -99,7 +99,7 @@ app.patch('/inventory/decrease', async (req, res) => {
             'UPDATE inventory SET stock_quantity = stock_quantity - $1 WHERE inventory_id = $2 RETURNING *',
             [amount, inventory_id]
         );
-        await logAction('decrease_stock', { inventory_id, amount });
+        await logAction('decrease_stock', { inventory: result.rows[0] });
         res.status(200).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
