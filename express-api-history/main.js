@@ -31,24 +31,25 @@ app.get("/history", async (req, res) => {
     let filters = [];
     let values = [];
 
-    if (shop_id) {
-        filters.push("shop_id = $1");
-        values.push(shop_id);
+    // Add filters dynamically with proper placeholder numbering
+    if (shop_id) { //
+        filters.push(`shop_id = $${values.length + 1}`);
+        values.push(Number(shop_id)); // Explicit type conversion
     }
-    if (plu) {
-        filters.push("plu = $2");
-        values.push(plu);
+    if (plu) { //
+        filters.push(`plu = $${values.length + 1}`);
+        values.push(Number(plu));
     }
-    if (start_date) {
-        filters.push("created_at >= $3");
+    if (start_date) { //
+        filters.push(`created_at >= $${values.length + 1}`);
         values.push(start_date);
     }
-    if (end_date) {
-        filters.push("created_at <= $4");
+    if (end_date) { //
+        filters.push(`created_at <= $${values.length + 1}`);
         values.push(end_date);
     }
-    if (action) {
-        filters.push("action = $5");
+    if (action) { //
+        filters.push(`action = $${values.length + 1}`);
         values.push(action);
     }
 
@@ -60,11 +61,11 @@ app.get("/history", async (req, res) => {
              ${whereClause}
              ORDER BY created_at DESC
              LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
-            [...values, limit, offset]
+            [...values, limit, offset] // Append limit and offset at the end
         );
         res.json(rows);
     } catch (err) {
-        console.error(err);
+        console.error("Error executing query:", err);
         res.status(500).send("Server error");
     }
 });
