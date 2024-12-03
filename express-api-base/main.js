@@ -148,24 +148,32 @@ app.get('/inventory', async (req, res) => {
 
 // Endpoint: Получение товаров по фильтрам
 app.get('/products', async (req, res) => {
-    const { name, plu } = req.query;
+    const { name, plu } = req.query.name ? req.query : req.body; // Use body if no query params
+    console.log(name, plu);
     let query = 'SELECT * FROM products WHERE true';
     const params = [];
+
     if (name) {
         params.push(`%${name}%`);
         query += ` AND name ILIKE $${params.length}`;
     }
     if (plu) {
-        params.push(plu);
+        params.push(Number(plu));
         query += ` AND plu = $${params.length}`;
     }
+
+    console.log('Query:', query); // Log query
+    console.log('Params:', params); // Log params
+
     try {
         const result = await pool.query(query, params);
         res.status(200).json(result.rows);
     } catch (err) {
+        console.error('Error executing query:', err);
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // Запуск сервера
 const port = process.env.DEPLOY_PORT || 8001;
