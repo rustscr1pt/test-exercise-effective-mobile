@@ -111,30 +111,32 @@ app.get('/inventory', async (req, res) => {
     const { plu, shop_id, stock_min, stock_max, order_min, order_max } = req.query;
     let query = 'SELECT * FROM inventory WHERE true';
     const params = [];
-    if (plu) {
+
+    if (plu) { //
         params.push(plu);
         query += ` AND plu = $${params.length}`;
     }
-    if (shop_id) {
+    if (shop_id) { //
         params.push(shop_id);
         query += ` AND store_id = $${params.length}`;
     }
-    if (stock_min) {
-        params.push(stock_min);
+    if (stock_min) { //
+        params.push(Number(stock_min));
         query += ` AND stock_quantity >= $${params.length}`;
     }
-    if (stock_max) {
-        params.push(stock_max);
+    if (stock_max) { //
+        params.push(Number(stock_max));
         query += ` AND stock_quantity <= $${params.length}`;
     }
-    if (order_min) {
-        params.push(order_min);
+    if (order_min) { //
+        params.push(Number(order_min));
         query += ` AND order_quantity >= $${params.length}`;
     }
-    if (order_max) {
-        params.push(order_max);
+    if (order_max) { //
+        params.push(Number(order_max));
         query += ` AND order_quantity <= $${params.length}`;
     }
+
     try {
         const result = await pool.query(query, params);
         res.status(200).json(result.rows);
@@ -142,6 +144,7 @@ app.get('/inventory', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // Endpoint: Получение товаров по фильтрам
 app.get('/products', async (req, res) => {
