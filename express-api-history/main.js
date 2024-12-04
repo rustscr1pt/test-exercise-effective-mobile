@@ -1,14 +1,15 @@
 const express = require("express");
 const extractPool = require('./postgres_pool');
 const app = express();
-
-// Setup PostgreSQL connection
 const pool = extractPool();
 
 // Middleware for JSON parsing
 app.use(express.json());
 
-// POST Endpoint to log actions
+/**
+ * POST => /history
+ * Записывает лог в бд о событии, которое только что произошло. Записывает в таблицу action_history
+ */
 app.post("/history", async (req, res) => {
     const { action, shop_id, plu, details } = req.body;
     try {
@@ -23,7 +24,11 @@ app.post("/history", async (req, res) => {
     }
 });
 
-// GET Endpoint to retrieve history with filtering and pagination
+/**
+ * GET => /history
+ * Получает логи из таблицы action_history с возможностью фильтрации по критериям и пагинацией
+ * Дополнительные параметры : shop_id, plu, start_date, end_date, action, page, limit
+ */
 app.get("/history", async (req, res) => {
     const { shop_id, plu, start_date, end_date, action, page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
@@ -31,7 +36,6 @@ app.get("/history", async (req, res) => {
     let filters = [];
     let values = [];
 
-    // Add filters dynamically with proper placeholder numbering
     if (shop_id) { //
         filters.push(`shop_id = $${values.length + 1}`);
         values.push(Number(shop_id)); // Explicit type conversion
@@ -69,8 +73,6 @@ app.get("/history", async (req, res) => {
         res.status(500).send("Server error");
     }
 });
-
-// Set the port for the history service
 const port = process.env.DEPLOY_PORT || 8002;
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
