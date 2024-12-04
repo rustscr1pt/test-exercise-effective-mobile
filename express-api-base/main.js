@@ -2,16 +2,19 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const extractPool = require('./postgres_pool');
 const axios = require('axios');
-
 const app = express();
 app.use(bodyParser.json());
 
 // Настройка подключения к PostgreSQL
 const pool = extractPool();
-
 const HISTORY_SERVICE_URL = `http://express-api-history:${process.env.API_HISTORY_PORT || 8002}/history`;
 
-// Функция для отправки событий в сервис истории
+/**
+ * Функция для отправки произошелших событий в контейнер express-api-history
+ * @param {string} action - действие, которое требуется записать. Например : "create_product"
+ * @param {Object} details - передается объект, который содержит подробный контекст о произошедшем действии.
+ * @return {Promise<void>} - возвращает Promise, который завершается после успешной отправки запроса или записи ошибки в консоль
+ */
 async function logAction(action, details) {
     try {
         await axios.post(HISTORY_SERVICE_URL, {
@@ -26,7 +29,13 @@ async function logAction(action, details) {
     }
 }
 
-// Endpoint: Создание товара
+/**
+ * POST => /products
+ * Создает новый продукт, в ответ возвращает тело с именем + plu
+ * {
+ *   "name": "string"  // имя нового товара
+ * }
+ */
 app.post('/products', async (req, res) => {
     const { name } = req.body;
     try {
@@ -39,7 +48,17 @@ app.post('/products', async (req, res) => {
     }
 });
 
-// Endpoint: Создание остатка
+/**
+ * POST => /inventory
+ * Создает новую инвентаризационную запись. Если магазин с выбранным id отсутствует - он создается.
+ * {
+ *   "plu": "integer",          // артикул
+ *   "store_id": "integer",     // уникальный номер магазина
+ *   "stock_quantity": "integer", // количество в наличии
+ *   "order_quantity": "integer", // количество доступное для заказа
+ *   "store_name": "string"     // название магазина (опционально, если не нужно создавать новый оставить "", иначе заполнить)
+ * }
+ */
 app.post('/inventory', async (req, res) => {
     const { plu, store_id, stock_quantity, order_quantity, store_name } = req.body; // Use `store_name` for new stores
     try {
@@ -76,7 +95,14 @@ app.post('/inventory', async (req, res) => {
 });
 
 
-// Endpoint: Увеличение остатка
+/**
+ * PATCH => /inventory/increase
+ * Увеличивает количество товара, который в наличии
+ * {
+ *   "inventory_id": "integer",  // Inventory ID товара, который нужно обновить
+ *   "amount": "integer"         // количество, на которое нужно увеличить
+ * }
+ */
 app.patch('/inventory/increase', async (req, res) => {
     const { inventory_id, amount } = req.body;
     try {
@@ -91,7 +117,14 @@ app.patch('/inventory/increase', async (req, res) => {
     }
 });
 
-// Endpoint: Уменьшение остатка
+/**
+ * PATCH => /inventory/decrease
+ * Уменьшает количество товара, который в наличии
+ * {
+ *   "inventory_id": "integer",  // Inventory ID товара, который нужно обновить
+ *   "amount": "integer"         // количество, на которое нужно уменьшить
+ * }
+ */
 app.patch('/inventory/decrease', async (req, res) => {
     const { inventory_id, amount } = req.body;
     try {
@@ -106,7 +139,12 @@ app.patch('/inventory/decrease', async (req, res) => {
     }
 });
 
-// Endpoint: Получение остатков по фильтрам
+/**
+ * GET => /inventory
+ * Получить записи о товарах в наличии
+ * Фильрация по параметрам : plu, shop_id, stock_min, stock_max, order_min, order_max
+ * Параметры передаются через Query Params!
+ */
 app.get('/inventory', async (req, res) => {
     const { plu, shop_id, stock_min, stock_max, order_min, order_max } = req.query;
     let query = 'SELECT * FROM inventory WHERE true';
@@ -146,7 +184,12 @@ app.get('/inventory', async (req, res) => {
 });
 
 
-// Endpoint: Получение товаров по фильтрам
+/**
+ * GET => /products
+ * Получить записи о продуктах, с возможностью фильтрации через параметры
+ * Фильрация по параметрам : name, plu
+ * Параметры передаются через Query Params!
+ */
 app.get('/products', async (req, res) => {
     const { name, plu } = req.query.name ? req.query : req.body; // Use body if no query params
     console.log(name, plu);
