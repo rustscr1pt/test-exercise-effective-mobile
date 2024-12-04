@@ -9,6 +9,12 @@ app.use(express.json());
 /**
  * POST => /history
  * Записывает лог в бд о событии, которое только что произошло. Записывает в таблицу action_history
+ * {
+ *   "action": "string",       // выполненное действие
+ *   "shop_id": "integer",     // ID магазина
+ *   "plu": "integer",         // plu (код товара)
+ *   "details": "object"       // больше деталей о произошелшем действии
+ * }
  */
 app.post("/history", async (req, res) => {
     const { action, shop_id, plu, details } = req.body;
@@ -28,6 +34,7 @@ app.post("/history", async (req, res) => {
  * GET => /history
  * Получает логи из таблицы action_history с возможностью фильтрации по критериям и пагинацией
  * Дополнительные параметры : shop_id, plu, start_date, end_date, action, page, limit
+ * Параметры передаются через Query Params
  */
 app.get("/history", async (req, res) => {
     const { shop_id, plu, start_date, end_date, action, page = 1, limit = 10 } = req.query;

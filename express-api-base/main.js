@@ -191,8 +191,7 @@ app.get('/inventory', async (req, res) => {
  * Параметры передаются через Query Params!
  */
 app.get('/products', async (req, res) => {
-    const { name, plu } = req.query.name ? req.query : req.body; // Use body if no query params
-    console.log(name, plu);
+    const { name, plu } = req.query;
     let query = 'SELECT * FROM products WHERE true';
     const params = [];
 
@@ -204,10 +203,6 @@ app.get('/products', async (req, res) => {
         params.push(Number(plu));
         query += ` AND plu = $${params.length}`;
     }
-
-    console.log('Query:', query); // Log query
-    console.log('Params:', params); // Log params
-
     try {
         const result = await pool.query(query, params);
         res.status(200).json(result.rows);
